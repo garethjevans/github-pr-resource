@@ -1,0 +1,63 @@
+name: Create and publish a Docker image
+
+on:
+  push:
+    branches: ['master']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    name: Build and Push github-pr-resource image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prep
+        run: |
+          EVENT_NAME=${{ github.event_name }}
+          IS_FORK=${{ github.event.pull_request.head.repo.fork }}
+
+          echo "Event Name = $EVENT_NAME"
+          echo "Is Fork = $IS_FORK"
+          
+          if [ "$EVENT_NAME" = "push" ]; then
+            echo "::set-output name=should_push::true"
+          elif [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$IS_FORK" = "true" ]; then
+              echo "::set-output name=should_push::false"
+            else
+              echo "::set-output name=should_push::true"
+            fi
+          fi
+
+      - name: Log in to the Container registry
+        if: ${{ steps.prep.outputs.should_push == 'true' }}
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: dockerfiles/autoscaler-${{ matrix.image_suffix }} 
+          push: ${{ steps.prep.outputs.should_push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
