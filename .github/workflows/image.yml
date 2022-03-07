@@ -19,7 +19,7 @@ jobs:
     name: Build and Push github-pr-resource image
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Prepare
         id: prep
