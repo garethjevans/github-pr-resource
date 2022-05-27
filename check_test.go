@@ -2,6 +2,7 @@ package resource_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/shurcooL/githubv4"
 	"github.com/stretchr/testify/assert"
@@ -11,18 +12,30 @@ import (
 
 var (
 	testPullRequests = []*resource.PullRequest{
-		createTestPR(1, "master", true, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(2, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(3, "master", false, false, 0, nil, true, githubv4.PullRequestStateOpen),
-		createTestPR(4, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(5, "master", false, true, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(6, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(7, "develop", false, false, 0, []string{"enhancement"}, false, githubv4.PullRequestStateOpen),
-		createTestPR(8, "master", false, false, 1, []string{"wontfix"}, false, githubv4.PullRequestStateOpen),
-		createTestPR(9, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		createTestPR(10, "master", false, false, 0, nil, false, githubv4.PullRequestStateClosed),
-		createTestPR(11, "master", false, false, 0, nil, false, githubv4.PullRequestStateMerged),
-		createTestPR(12, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+		createTestPR(1, "master", true, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(2, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(3, "master", false, false, 0, nil, true, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(4, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(5, "master", false, true, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(6, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(7, "develop", false, false, 0, []string{"enhancement"}, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(8, "master", false, false, 1, []string{"wontfix"}, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(9, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+		createTestPR(10, "master", false, false, 0, nil, false, githubv4.PullRequestStateClosed, []resource.StatusContext{}),
+		createTestPR(11, "master", false, false, 0, nil, false, githubv4.PullRequestStateMerged, []resource.StatusContext{}),
+		createTestPR(12, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
+
+		createTestPR(13, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{
+			{Context: "my-status-check", State: "SUCCESS"},
+		}),
+		// multiple status check
+		createTestPR(14, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{
+			{Context: "my-status-check", State: "SUCCESS"},
+			{Context: "my-failed-status-check", State: "FAILURE"},
+		}),
+		createTestPR(15, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{
+			{Context: "my-status-check-2", State: "SUCCESS", CreatedAt: githubv4.DateTime{Time: time.Now().AddDate(0, 0, 1)}},
+		}),
 	}
 )
 
@@ -38,14 +51,15 @@ func TestCheck(t *testing.T) {
 		{
 			description: "check returns the latest version if there is no previous",
 			source: resource.Source{
-				Repository:  "itsdalmo/test-repository",
-				AccessToken: "oauthtoken",
+				Repository:    "itsdalmo/test-repository",
+				AccessToken:   "oauthtoken",
+				StatusFilters: []resource.StatusFilter{},
 			},
 			version:      resource.Version{},
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -55,11 +69,11 @@ func TestCheck(t *testing.T) {
 				Repository:  "itsdalmo/test-repository",
 				AccessToken: "oauthtoken",
 			},
-			version:      resource.NewVersion(testPullRequests[1]),
+			version:      resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -69,12 +83,12 @@ func TestCheck(t *testing.T) {
 				Repository:  "itsdalmo/test-repository",
 				AccessToken: "oauthtoken",
 			},
-			version:      resource.NewVersion(testPullRequests[3]),
+			version:      resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[2]),
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[2], testPullRequests[2].Tip.PushedDate.Time),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -85,7 +99,7 @@ func TestCheck(t *testing.T) {
 				AccessToken: "oauthtoken",
 				Paths:       []string{"terraform/*/*.tf", "terraform/*/*/*.tf"},
 			},
-			version:      resource.NewVersion(testPullRequests[3]),
+			version:      resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			files: [][]string{
 				{"README.md", "travis.yml"},
@@ -93,7 +107,7 @@ func TestCheck(t *testing.T) {
 				{"terraform/modules/variables.tf", "travis.yml"},
 			},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[2]),
+				resource.NewVersion(testPullRequests[2], testPullRequests[2].Tip.PushedDate.Time),
 			},
 		},
 
@@ -104,7 +118,7 @@ func TestCheck(t *testing.T) {
 				AccessToken: "oauthtoken",
 				IgnorePaths: []string{"*.md", "*.yml"},
 			},
-			version:      resource.NewVersion(testPullRequests[3]),
+			version:      resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			files: [][]string{
 				{"README.md", "travis.yml"},
@@ -112,7 +126,7 @@ func TestCheck(t *testing.T) {
 				{"terraform/modules/variables.tf", "travis.yml"},
 			},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[2]),
+				resource.NewVersion(testPullRequests[2], testPullRequests[2].Tip.PushedDate.Time),
 			},
 		},
 
@@ -123,10 +137,10 @@ func TestCheck(t *testing.T) {
 				AccessToken:   "oauthtoken",
 				DisableCISkip: true,
 			},
-			version:      resource.NewVersion(testPullRequests[1]),
+			version:      resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[0]),
+				resource.NewVersion(testPullRequests[0], testPullRequests[0].Tip.PushedDate.Time),
 			},
 		},
 
@@ -137,10 +151,10 @@ func TestCheck(t *testing.T) {
 				AccessToken:  "oauthtoken",
 				IgnoreDrafts: true,
 			},
-			version:      resource.NewVersion(testPullRequests[3]),
+			version:      resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -151,11 +165,11 @@ func TestCheck(t *testing.T) {
 				AccessToken:  "oauthtoken",
 				IgnoreDrafts: false,
 			},
-			version:      resource.NewVersion(testPullRequests[3]),
+			version:      resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[2]),
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[2], testPullRequests[2].Tip.PushedDate.Time),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -166,12 +180,12 @@ func TestCheck(t *testing.T) {
 				AccessToken:  "oauthtoken",
 				DisableForks: true,
 			},
-			version:      resource.NewVersion(testPullRequests[5]),
+			version:      resource.NewVersion(testPullRequests[5], testPullRequests[5].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[3]),
-				resource.NewVersion(testPullRequests[2]),
-				resource.NewVersion(testPullRequests[1]),
+				resource.NewVersion(testPullRequests[3], testPullRequests[3].Tip.PushedDate.Time),
+				resource.NewVersion(testPullRequests[2], testPullRequests[2].Tip.PushedDate.Time),
+				resource.NewVersion(testPullRequests[1], testPullRequests[1].Tip.PushedDate.Time),
 			},
 		},
 
@@ -186,7 +200,7 @@ func TestCheck(t *testing.T) {
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[6]),
+				resource.NewVersion(testPullRequests[6], testPullRequests[6].Tip.PushedDate.Time),
 			},
 		},
 
@@ -197,10 +211,10 @@ func TestCheck(t *testing.T) {
 				AccessToken:             "oauthtoken",
 				RequiredReviewApprovals: 1,
 			},
-			version:      resource.NewVersion(testPullRequests[8]),
+			version:      resource.NewVersion(testPullRequests[8], testPullRequests[8].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[7]),
+				resource.NewVersion(testPullRequests[7], testPullRequests[7].Tip.PushedDate.Time),
 			},
 		},
 
@@ -215,7 +229,7 @@ func TestCheck(t *testing.T) {
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[6]),
+				resource.NewVersion(testPullRequests[6], testPullRequests[6].Tip.PushedDate.Time),
 			},
 		},
 
@@ -230,7 +244,7 @@ func TestCheck(t *testing.T) {
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[9]),
+				resource.NewVersion(testPullRequests[9], testPullRequests[9].Tip.PushedDate.Time),
 			},
 		},
 
@@ -246,7 +260,6 @@ func TestCheck(t *testing.T) {
 			files:        [][]string{},
 			expected:     resource.CheckResponse(nil),
 		},
-
 		{
 			description: "check returns versions from a PR with multiple state filters",
 			source: resource.Source{
@@ -254,12 +267,62 @@ func TestCheck(t *testing.T) {
 				AccessToken: "oauthtoken",
 				States:      []githubv4.PullRequestState{githubv4.PullRequestStateClosed, githubv4.PullRequestStateMerged},
 			},
-			version:      resource.NewVersion(testPullRequests[11]),
+			version:      resource.NewVersion(testPullRequests[11], testPullRequests[11].Tip.PushedDate.Time),
 			pullRequests: testPullRequests,
 			files:        [][]string{},
 			expected: resource.CheckResponse{
-				resource.NewVersion(testPullRequests[9]),
-				resource.NewVersion(testPullRequests[10]),
+				resource.NewVersion(testPullRequests[10], testPullRequests[10].Tip.PushedDate.Time),
+				resource.NewVersion(testPullRequests[9], testPullRequests[9].Tip.PushedDate.Time),
+			},
+		},
+		{
+			description: "check returns a PR that has a complete status for a status check",
+			source: resource.Source{
+				Repository:  "itsdalmo/test-repository",
+				AccessToken: "oauthtoken",
+				StatusFilters: []resource.StatusFilter{
+					{Context: "my-status-check", State: "success"},
+				},
+			},
+			version:      resource.Version{},
+			pullRequests: testPullRequests,
+			files:        [][]string{},
+			expected: resource.CheckResponse{
+				resource.NewVersion(testPullRequests[12], testPullRequests[12].Tip.PushedDate.Time),
+			},
+		},
+		{
+			description: "check returns a PR where the check created_at is greater than the resource version",
+			source: resource.Source{
+				Repository:  "itsdalmo/test-repository",
+				AccessToken: "oauthtoken",
+				StatusFilters: []resource.StatusFilter{
+					{Context: "my-status-check-2", State: "success"},
+				},
+			},
+			version:      resource.NewVersion(testPullRequests[9], testPullRequests[9].Tip.PushedDate.Time),
+			pullRequests: testPullRequests,
+			files:        [][]string{},
+			expected: resource.CheckResponse{
+				resource.NewVersion(testPullRequests[9], testPullRequests[9].Tip.PushedDate.Time),
+			},
+		},
+		{
+			description: "check returns a PR that has multiple required status checks",
+			source: resource.Source{
+				Repository:  "itsdalmo/test-repository",
+				AccessToken: "oauthtoken",
+				StatusFilters: []resource.StatusFilter{
+					{Context: "my-status-check", State: "success"},
+					{Context: "my-failed-status-check", State: "failure"},
+				},
+			},
+			version:      resource.Version{},
+			pullRequests: testPullRequests,
+			files:        [][]string{},
+			expected: resource.CheckResponse{
+				// todo: pull request index
+				resource.NewVersion(testPullRequests[13], testPullRequests[13].Tip.PushedDate.Time),
 			},
 		},
 	}

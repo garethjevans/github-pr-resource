@@ -29,12 +29,12 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters:  resource.PutParameters{},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -44,14 +44,14 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status: "success",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -61,15 +61,15 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:  "failure",
 				Context: "build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -79,16 +79,16 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:      "failure",
 				BaseContext: "concourse-ci-custom",
 				Context:     "build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -98,15 +98,15 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:    "failure",
 				TargetURL: "https://targeturl.com/concourse",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -116,15 +116,15 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:      "failure",
 				Description: "Concourse CI build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -134,14 +134,14 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Comment: "comment",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -151,14 +151,14 @@ func TestPut(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				DeletePreviousComments: true,
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, []string{}, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, 0, []string{}, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 	}
 
@@ -243,15 +243,15 @@ func TestVariableSubstitution(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Comment: fmt.Sprintf("$%s", variableName),
 			},
 			expectedComment: variableValue,
-			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -261,16 +261,16 @@ func TestVariableSubstitution(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:    "failure",
 				TargetURL: fmt.Sprintf("%s$%s", variableURL, variableName),
 			},
 			expectedTargetURL: fmt.Sprintf("%s%s", variableURL, variableValue),
-			pullRequest:       createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:       createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 
 		{
@@ -280,15 +280,15 @@ func TestVariableSubstitution(t *testing.T) {
 				AccessToken: "oauthtoken",
 			},
 			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				PR:          "pr1",
+				Commit:      "commit1",
+				ChangedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Comment: "$THIS_IS_NOT_SUBSTITUTED",
 			},
 			expectedComment: "$THIS_IS_NOT_SUBSTITUTED",
-			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen, []resource.StatusContext{}),
 		},
 	}
 

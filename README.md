@@ -8,7 +8,14 @@
 [original-resource]: https://github.com/jtarchie/github-pullrequest-resource
 
 A Concourse resource for pull requests on Github. Written in Go and based on the [Github V4 (GraphQL) API][graphql-api].
-Inspired by [the original][original-resource], with some important differences:
+
+This is based on the latest [telia-oss/github-pr-resource](https://github.com/telia-oss/github-pr-resource), but with a few features on top:
+
+- on-disk HTTP caching of GitHub API calls ([7d31bf1](https://github.com/opendoor-labs/github-pr-resource/commit/7d31bf1))
+- adds `status_filter` field used on a few of our pipelines (#2)
+- fixes pagination date bug (#6)
+
+telia-oss/github-pr-resource is itself inspired by [the original][original-resource], with some important differences:
 
 - Github V4: `check` only requires 1 API call per 100th *open* pull request. (See [#costs](#costs) for more information).
 - Fetch/merge: `get` will always merge a specific commit from the Pull request into the latest base.
@@ -250,3 +257,41 @@ If you are coming from [jtarchie/github-pullrequest-resource][original-resource]
 Note that if you are migrating from the original resource on a Concourse version prior to `v5.0.0`, you might
 see an error `failed to unmarshal request: json: unknown field "ref"`. The solution is to rename the resource
 so that the history is wiped. See [#64](https://github.com/telia-oss/github-pr-resource/issues/64) for details.
+
+## Debugging
+
+The following query is useful for debugging with the github
+graphql explorer
+
+```graphql
+# Type queries into this side of the screen, and you will
+# see intelligent typeaheads aware of the current GraphQL type schema,
+# live syntax, and validation errors highlighted within the text.
+
+# We'll get you started with a simple query showing your username!
+query {
+  repository(name: "code", owner: "opendoor-labs") {
+    pullRequests(first: 100) {
+      edges {
+        node {
+          commits(last: 1) {
+            edges {
+              node {
+                commit {
+                  status {
+                    contexts {
+                      context
+                      createdAt
+                      state
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
